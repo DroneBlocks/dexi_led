@@ -331,7 +331,17 @@ class LEDService(Node):
             'yellow': (255, 255, 0),
             'purple': (255, 0, 255),
             'cyan': (0, 255, 255),
-            'white': (255, 255, 255)
+            'white': (255, 255, 255),
+            'orange': (255, 127, 0),
+            'teal': (0, 128, 128),
+            'magenta': (255, 0, 128),
+            'gold': (255, 215, 0),
+            'pink': (255, 192, 203),
+            'aqua': (0, 255, 255),
+            'jade': (0, 168, 107),
+            'amber': (255, 191, 0),
+            'old_lace': (253, 245, 230),
+            'black': (0, 0, 0)
         }
 
         if request.color not in color_map:
