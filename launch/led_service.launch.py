@@ -34,6 +34,7 @@ def generate_launch_description():
         package='dexi_led',
         executable='led_service',
         name='led_service',
+        namespace='dexi',
         parameters=[{
             'led_count': LaunchConfiguration('led_count'),
             'brightness': LaunchConfiguration('brightness'),
