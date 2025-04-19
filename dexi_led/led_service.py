@@ -8,6 +8,7 @@ from pi5neo import Pi5Neo
 import threading
 import time
 import random
+import sys
 
 class LEDService(Node):
     def __init__(self):
@@ -27,6 +28,7 @@ class LEDService(Node):
         # Add effect control variables
         self.effect_thread = None
         self.effect_running = False
+        self._is_shutting_down = False
         
         if not self.simulation_mode:
             self.strip = Pi5Neo('/dev/spidev0.0', self.led_count, self.spi_speed)
@@ -48,20 +50,40 @@ class LEDService(Node):
             self.set_led_ring_callback
         )
 
-        # Replace the effect subscriber with a service
+        # Create effect service
         self.effect_service = self.create_service(
             LEDEffect,
             '~/set_led_effect',
             self.effect_callback
         )
-        
-        self.get_logger().info('LED Service initialized successfully')
-        
+
         # Start rainbow effect automatically
         self.effect_running = True
         self.effect_thread = threading.Thread(target=self.rainbow_effect)
         self.effect_thread.start()
         self.get_logger().info("Started initial rainbow effect")
+
+        # Register shutdown callback
+        self.get_logger().info('LED Service initialized successfully')
+
+    def cleanup(self):
+        """Clean up resources"""
+        if self._is_shutting_down:
+            return
+            
+        self._is_shutting_down = True
+        print('Cleaning up LED resources...')
+        
+        # Stop any running effect
+        self.stop_current_effect()
+        
+        # Turn off LEDs
+        if not self.simulation_mode and hasattr(self, 'strip'):
+            try:
+                self.strip.fill_strip(0, 0, 0)
+                self.strip.update_strip()
+            except Exception as e:
+                print(f'Error during LED cleanup: {str(e)}')
 
     def rainbow_effect(self):
         colors = [
@@ -366,14 +388,31 @@ class LEDService(Node):
             
         return response
 
-    def __del__(self):
-        self.stop_current_effect()
+    def destroy_node(self):
+        """Override destroy_node to ensure cleanup"""
+        self.cleanup()
+        super().destroy_node()
 
 def main():
-    rclpy.init()
-    node = LEDService()
-    rclpy.spin(node)
-    rclpy.shutdown()
+    try:
+        rclpy.init()
+        node = LEDService()
+        
+        try:
+            rclpy.spin(node)
+        except KeyboardInterrupt:
+            print('Keyboard interrupt received, shutting down...')
+            node.cleanup()
+            node.destroy_node()
+            sys.exit(0)
+        except Exception as e:
+            print(f'Error during execution: {str(e)}')
+            node.cleanup()
+            node.destroy_node()
+            sys.exit(1)
+    except Exception as e:
+        print(f'Error initializing node: {str(e)}')
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
