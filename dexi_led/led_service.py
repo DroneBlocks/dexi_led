@@ -31,7 +31,7 @@ class LEDService(Node):
         self._is_shutting_down = False
         
         if not self.simulation_mode:
-            self.strip = Pi5Neo('/dev/spidev0.0', self.led_count, self.spi_speed)
+            self.strip = Pi5Neo('/dev/spidev1.0', self.led_count, self.spi_speed)
             self.strip.fill_strip(0, 0, 0)
             self.strip.update_strip()
         else:
