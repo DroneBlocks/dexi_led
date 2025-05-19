@@ -57,11 +57,11 @@ class LEDService(Node):
             self.effect_callback
         )
 
-        # Start rainbow effect automatically
+        # Start galaxy spiral effect automatically
         self.effect_running = True
-        self.effect_thread = threading.Thread(target=self.rainbow_effect)
+        self.effect_thread = threading.Thread(target=self.galaxy_spiral_effect)
         self.effect_thread.start()
-        self.get_logger().info("Started initial rainbow effect")
+        self.get_logger().info("Started initial galaxy spiral effect")
 
         # Register shutdown callback
         self.get_logger().info('LED Service initialized successfully')
