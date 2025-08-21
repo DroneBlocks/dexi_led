@@ -250,6 +250,28 @@ class LEDService(Node):
                 self.strip.update_strip()
                 time.sleep(delay)
 
+    def red_flash_effect(self):
+        """Creates a red flashing effect with 1-second delays"""
+        red_color = (255, 0, 0)  # Red color
+        delay = 1.0  # 1 second delay
+        
+        while self.effect_running:
+            if not self.effect_running:
+                break
+                
+            # Turn all LEDs red
+            self.strip.fill_strip(*red_color)
+            self.strip.update_strip()
+            time.sleep(delay)
+            
+            if not self.effect_running:
+                break
+                
+            # Turn all LEDs off
+            self.strip.fill_strip(0, 0, 0)
+            self.strip.update_strip()
+            time.sleep(delay)
+
     def stop_current_effect(self):
         self.effect_running = False
         if self.effect_thread is not None:
@@ -306,6 +328,13 @@ class LEDService(Node):
                 self.get_logger().info("Started galaxy spiral effect")
                 response.success = True
                 response.message = "Successfully started galaxy spiral effect"
+            elif request.effect_name.lower() == 'red_flash':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.red_flash_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started red flash effect")
+                response.success = True
+                response.message = "Successfully started red flash effect"
             elif request.effect_name.lower() == 'stop':
                 self.get_logger().info("Stopped current effect")
                 response.success = True
