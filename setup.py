@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'led_service = dexi_led.led_service:main',
+            'led_visualization_bridge = dexi_led.led_visualization_bridge:main',
         ],
     },
 )
