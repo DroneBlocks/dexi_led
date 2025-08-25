@@ -13,7 +13,7 @@ class LEDFlightModeStatus(Node):
         super().__init__('led_flight_mode_status')
         
         # Create a client for the LED ring color service
-        self.led_client = self.create_client(LEDRingColor, 'led_service/set_led_ring_color')
+        self.led_client = self.create_client(LEDRingColor, '/dexi/led_service/set_led_ring_color')
         while not self.led_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('LED service not available, waiting...')
         
