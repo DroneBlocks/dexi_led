@@ -44,10 +44,20 @@ def generate_launch_description():
         output='screen'
     )
 
+    # Create the flight mode status node
+    flight_mode_status_node = Node(
+        package='dexi_led',
+        executable='led_flight_mode_status',
+        name='led_flight_mode_status',
+        namespace='dexi',
+        output='screen'
+    )
+
     return LaunchDescription([
         led_count_arg,
         brightness_arg,
         spi_speed_arg,
         simulation_mode_arg,
-        led_service_node
+        led_service_node,
+        flight_mode_status_node
     ])

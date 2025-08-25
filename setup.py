@@ -26,6 +26,7 @@ setup(
         'console_scripts': [
             'led_service_pi5 = dexi_led.led_service_pi5:main',
             'led_service_cm4 = dexi_led.led_service_cm4:main',
+            'led_flight_mode_status = dexi_led.led_flight_mode_status:main',
             'led_visualization_bridge = dexi_led.led_visualization_bridge:main',
         ],
     },
