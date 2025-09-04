@@ -8,6 +8,14 @@ from std_msgs.msg import String
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from .utils.flight_mode import FlightMode
 
+# Helper function to get the message version suffix for backwards compatibility
+def get_message_name_version(msg_class):
+    if hasattr(msg_class, 'MESSAGE_VERSION'):
+        if msg_class.MESSAGE_VERSION == 0:
+            return ""
+        return f"_v{msg_class.MESSAGE_VERSION}"
+    return ""
+
 class LEDFlightModeStatus(Node):
     def __init__(self):
         super().__init__('led_flight_mode_status')
@@ -33,10 +41,12 @@ class LEDFlightModeStatus(Node):
             depth=1
         )
         
-        # Subscribe to PX4 vehicle status
+        # Subscribe to PX4 vehicle status with version-aware topic name
+        vehicle_status_topic = f"/fmu/out/vehicle_status{get_message_name_version(VehicleStatus)}"
+        
         self.subscription = self.create_subscription(
             VehicleStatus,
-            '/fmu/out/vehicle_status',
+            vehicle_status_topic,
             self.vehicle_status_callback,
             qos_profile
         )
