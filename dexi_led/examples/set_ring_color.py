@@ -7,7 +7,7 @@ from dexi_interfaces.srv import LEDRingColor
 class LEDRingColorClient(Node):
     def __init__(self):
         super().__init__('led_ring_color_client')
-        self.client = self.create_client(LEDRingColor, '/led_service/set_led_ring_color')
+        self.client = self.create_client(LEDRingColor, '/dexi/led_service/set_led_ring_color')
         
         while not self.client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service not available, waiting again...')
