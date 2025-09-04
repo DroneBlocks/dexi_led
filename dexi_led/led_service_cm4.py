@@ -70,8 +70,13 @@ class LEDService(Node):
 def main(args=None):
     rclpy.init(args=args)
     led_service = LEDService()
-    rclpy.spin(led_service)
-    rclpy.shutdown()
+    try:
+        rclpy.spin(led_service)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        led_service.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
