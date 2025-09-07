@@ -252,15 +252,42 @@ class LEDService(Node):
 
     def red_flash_effect(self):
         """Creates a red flashing effect with 1-second delays"""
-        red_color = (255, 0, 0)  # Red color
-        delay = 1.0  # 1 second delay
+        self.blink_effect("red", 1.0)
+
+    def blink_effect(self, color_name, delay=0.5):
+        """Creates a blinking effect with specified color and delay"""
+        color_map = {
+            'red': (255, 0, 0),
+            'green': (0, 255, 0),
+            'blue': (0, 0, 255),
+            'yellow': (255, 255, 0),
+            'purple': (255, 0, 255),
+            'cyan': (0, 255, 255),
+            'white': (255, 255, 255),
+            'orange': (255, 127, 0),
+            'teal': (0, 128, 128),
+            'magenta': (255, 0, 128),
+            'gold': (255, 215, 0),
+            'pink': (255, 192, 203),
+            'aqua': (0, 255, 255),
+            'jade': (0, 168, 107),
+            'amber': (255, 191, 0),
+            'old_lace': (253, 245, 230),
+            'black': (0, 0, 0)
+        }
+        
+        if color_name not in color_map:
+            self.get_logger().error(f"Unknown color: {color_name}")
+            return
+            
+        color = color_map[color_name]
         
         while self.effect_running:
             if not self.effect_running:
                 break
                 
-            # Turn all LEDs red
-            self.strip.fill_strip(*red_color)
+            # Turn all LEDs to specified color
+            self.strip.fill_strip(*color)
             self.strip.update_strip()
             time.sleep(delay)
             
@@ -335,6 +362,15 @@ class LEDService(Node):
                 self.get_logger().info("Started red flash effect")
                 response.success = True
                 response.message = "Successfully started red flash effect"
+            elif request.effect_name.lower().startswith('blink_'):
+                # Extract color from effect name (e.g., "blink_cyan" -> "cyan")
+                color_name = request.effect_name.lower().replace('blink_', '')
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.blink_effect, args=(color_name,))
+                self.effect_thread.start()
+                self.get_logger().info(f"Started {color_name} blink effect")
+                response.success = True
+                response.message = f"Successfully started {color_name} blink effect"
             elif request.effect_name.lower() == 'stop':
                 self.get_logger().info("Stopped current effect")
                 response.success = True

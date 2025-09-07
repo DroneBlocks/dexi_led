@@ -3,7 +3,7 @@
 import rclpy
 from rclpy.node import Node
 from px4_msgs.msg import VehicleStatus
-from dexi_interfaces.srv import LEDRingColor
+from dexi_interfaces.srv import LEDRingColor, LEDEffect
 from std_msgs.msg import String
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from .utils.flight_mode import FlightMode
@@ -24,6 +24,11 @@ class LEDFlightModeStatus(Node):
         self.led_client = self.create_client(LEDRingColor, '/dexi/led_service/set_led_ring_color')
         while not self.led_client.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('LED service not available, waiting...')
+        
+        # Create a client for the LED effect service
+        self.effect_client = self.create_client(LEDEffect, '/dexi/led_service/set_led_effect')
+        while not self.effect_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('LED effect service not available, waiting...')
         
         # Subscribe to battery state
         self.battery_state_sub = self.create_subscription(
@@ -92,6 +97,12 @@ class LEDFlightModeStatus(Node):
             
         except ValueError:
             self.get_logger().warn(f'Unknown flight mode: {msg.nav_state}')
+            # Use cyan blinking effect for unknown flight modes
+            effect_request = LEDEffect.Request()
+            effect_request.effect_name = "blink_cyan"
+            
+            future = self.effect_client.call_async(effect_request)
+            future.add_done_callback(self.effect_response_callback)
         
     def led_response_callback(self, future):
         try:
@@ -100,6 +111,14 @@ class LEDFlightModeStatus(Node):
                 self.get_logger().error(f'Failed to set LED color: {response.message}')
         except Exception as e:
             self.get_logger().error(f'Service call failed: {e}')
+    
+    def effect_response_callback(self, future):
+        try:
+            response = future.result()
+            if not response.success:
+                self.get_logger().error(f'Failed to set LED effect: {response.message}')
+        except Exception as e:
+            self.get_logger().error(f'Effect service call failed: {e}')
 
 def main(args=None):
     rclpy.init(args=args)
