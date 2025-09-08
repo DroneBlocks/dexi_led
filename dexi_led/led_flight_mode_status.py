@@ -80,7 +80,8 @@ class LEDFlightModeStatus(Node):
             FlightMode.POSITION: "green",
             FlightMode.OFFBOARD: "purple",
             FlightMode.TAKEOFF: "blue",
-            FlightMode.LAND: "pink"
+            FlightMode.LAND: "pink",
+            FlightMode.HOLD: "cyan"
         }
         
         try:
