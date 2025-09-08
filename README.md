@@ -23,6 +23,7 @@ The LED ring automatically changes color based on the current PX4 flight mode:
 | TAKEOFF     | Blue      | Automatic takeoff |
 | LAND        | Pink      | Automatic landing |
 | HOLD        | Cyan      | Loiter/Hold position |
+| ACRO        | Orange    | Acrobatic/Rate mode (advanced) |
 
 ### Unknown Flight Modes
 - **Cyan Blinking**: When the flight mode is not recognized or not in the standard configuration, the LED ring will blink cyan to alert the user
