@@ -404,7 +404,7 @@ class LEDService(Node):
         return response
 
     def set_led_ring_callback(self, request, response):
-        self.get_logger().info(f'Setting ring color to: {request.color}')
+        self.get_logger().info(f'Setting ring color to: {request.color}, brightness: {request.brightness}')
 
         color_map = {
             'red': (255, 0, 0),
@@ -434,18 +434,26 @@ class LEDService(Node):
         try:
             # Stop any running effect first
             self.stop_current_effect()
-            
+
+            # Apply brightness scaling with 0.2 max multiplier for safety
+            brightness_multiplier = (request.brightness / 100.0) * 0.2
+
             r, g, b = color_map[request.color]
+            # Apply brightness scaling to RGB values
+            r = int(r * brightness_multiplier)
+            g = int(g * brightness_multiplier)
+            b = int(b * brightness_multiplier)
+
             self.strip.fill_strip(r, g, b)
             self.strip.update_strip()
-            
+
             response.success = True
-            response.message = "Successfully set LED ring color"
-            
+            response.message = f"Successfully set LED ring color with {request.brightness}% brightness"
+
         except Exception as e:
             response.success = False
             response.message = f"Failed to update LED strip: {str(e)}"
-            
+
         return response
 
     def destroy_node(self):
