@@ -87,13 +87,13 @@ For local development and testing without deploying to hardware, use the LED Vis
 3. **Test with service calls** (identical to hardware):
    ```bash
    # Set ring color
-   ros2 service call /led_visualization_bridge/set_led_ring_color dexi_interfaces/srv/LEDRingColor '{color: "cyan"}'
+   ros2 service call /dexi/led_service/set_led_ring_color dexi_interfaces/srv/LEDRingColor '{color: "cyan"}'
 
    # Start galaxy effect
-   ros2 service call /led_visualization_bridge/set_led_effect dexi_interfaces/srv/LEDEffect '{effect_name: "galaxy"}'
+   ros2 service call /dexi/led_service/set_led_effect dexi_interfaces/srv/LEDEffect '{effect_name: "galaxy"}'
 
    # Set individual pixel
-   ros2 service call /led_visualization_bridge/set_led_pixel_color dexi_interfaces/srv/LEDPixelColor '{index: 0, r: 255, g: 0, b: 0}'
+   ros2 service call /dexi/led_service/set_led_pixel_color dexi_interfaces/srv/LEDPixelColor '{index: 0, r: 255, g: 0, b: 0}'
    ```
 
 #### Configuration Parameters
@@ -107,9 +107,9 @@ For local development and testing without deploying to hardware, use the LED Vis
 
 Since the visualization bridge exposes the **same exact services** as your hardware, you can:
 
-1. **Test Node-RED flows** - Point service calls to `/led_visualization_bridge/...` instead of `/dexi/led_service/...`
-2. **Test Vue applications** - Same ROS2 service calls, just different node namespace
+1. **Test Node-RED flows** - Use the same service calls: `/dexi/led_service/...`
+2. **Test Vue applications** - Identical ROS2 service calls, no changes needed
 3. **Verify effects and colors** - See exactly how your LED patterns will look on hardware
 4. **Debug timing and sequences** - Perfect for testing complex LED choreography
 
-This allows you to develop and test your LED applications locally with full confidence they'll work identically on your Raspberry Pi hardware.
+**Your Node-RED and Vue applications require zero changes** - the same service calls work for both simulation and hardware!

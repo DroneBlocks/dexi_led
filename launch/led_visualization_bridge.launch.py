@@ -38,7 +38,8 @@ def generate_launch_description():
         Node(
             package='dexi_led',
             executable='led_visualization_bridge',
-            name='led_visualization_bridge',
+            name='led_service',
+            namespace='dexi',
             parameters=[{
                 'led_count': LaunchConfiguration('led_count'),
                 'brightness': LaunchConfiguration('brightness'),
