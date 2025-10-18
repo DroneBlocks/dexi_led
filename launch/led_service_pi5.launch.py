@@ -5,24 +5,30 @@ from launch.substitutions import LaunchConfiguration
 
 def generate_launch_description():
     # Declare launch arguments for Pi5
+    namespace_arg = DeclareLaunchArgument(
+        'namespace',
+        default_value='dexi',
+        description='Namespace for the LED service (e.g., dexi, dexi1, dexi2)'
+    )
+
     led_count_arg = DeclareLaunchArgument(
         'led_count',
         default_value='78',
         description='Number of LEDs in the strip'
     )
-    
+
     brightness_arg = DeclareLaunchArgument(
         'brightness',
         default_value='0.2',
         description='LED brightness (0.0-1.0)'
     )
-    
+
     spi_speed_arg = DeclareLaunchArgument(
         'spi_speed',
         default_value='800',
         description='SPI communication speed'
     )
-    
+
     simulation_mode_arg = DeclareLaunchArgument(
         'simulation_mode',
         default_value='false',
@@ -34,7 +40,7 @@ def generate_launch_description():
         package='dexi_led',
         executable='led_service_pi5',
         name='led_service',
-        namespace='dexi',
+        namespace=LaunchConfiguration('namespace'),
         parameters=[{
             'led_count': LaunchConfiguration('led_count'),
             'brightness': LaunchConfiguration('brightness'),
@@ -49,11 +55,12 @@ def generate_launch_description():
         package='dexi_led',
         executable='led_flight_mode_status',
         name='led_flight_mode_status',
-        namespace='dexi',
+        namespace=LaunchConfiguration('namespace'),
         output='screen'
     )
 
     return LaunchDescription([
+        namespace_arg,
         led_count_arg,
         brightness_arg,
         spi_speed_arg,
