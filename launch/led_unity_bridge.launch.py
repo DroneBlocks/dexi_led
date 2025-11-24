@@ -29,7 +29,8 @@ def generate_launch_description():
     led_unity_bridge_node = Node(
         package='dexi_led',
         executable='led_unity_bridge',
-        name='led_unity_bridge',
+        name='led_service',
+        namespace='dexi',
         output='screen',
         parameters=[{
             'led_count': LaunchConfiguration('led_count'),
