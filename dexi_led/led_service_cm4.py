@@ -379,6 +379,7 @@ class LEDService(Node):
             self.pixels.show()
 
             time.sleep(delay)
+            
     def stop_current_effect(self):
         self.effect_running = False
         if self.effect_thread is not None:
