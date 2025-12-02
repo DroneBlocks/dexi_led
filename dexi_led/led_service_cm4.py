@@ -6,6 +6,7 @@ import neopixel
 import threading
 import time
 from enum import Enum
+import colorsys
 
 from adafruit_led_animation.animation.solid import Solid
 from adafruit_led_animation.color import (
