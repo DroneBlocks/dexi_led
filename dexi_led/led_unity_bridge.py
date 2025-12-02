@@ -11,6 +11,7 @@ from dexi_interfaces.msg import LEDStateArray, LEDState
 from dexi_interfaces.srv import LEDPixelColor, LEDRingColor, LEDEffect
 import threading
 import time
+import colorsys
 
 class LEDUnityBridge(Node):
     def __init__(self):
@@ -174,6 +175,10 @@ class LEDUnityBridge(Node):
             'comet': self.comet_effect,
             'galaxy': self.galaxy_spiral_effect,
             'red_flash': self.red_flash_effect,
+            'gradient': self.gradient_effect,
+            'wave': self.wave_effect,
+            'snake': self.snake_effect,
+            'festive': self.festive_effect,
         }
 
         if effect_name in effect_methods:
@@ -343,6 +348,102 @@ class LEDUnityBridge(Node):
                                                     int(blue[2] * intensity))
                 time.sleep(0.05)
 
+    def gradient_effect(self):
+        """Creates a gradient effect"""
+        hue_increment = 0.01
+        hue = 0.0
+        delay = 0.05
+
+        while self.effect_running: 
+            r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+            color = (int(r*255), int(g*255), int(b*255))
+
+            with self.state_lock:
+                self.led_states = [color] * self.led_count
+
+            hue += hue_increment   
+            hue %= 1.0            
+
+            time.sleep(delay)
+
+    def wave_effect(self):
+        """Creates a wave the propagates from the center"""
+        delay = 0.1
+        colors = [
+            (255, 0, 0),    # Red
+            (255, 127, 0),  # Orange
+            (255, 255, 0),  # Yellow
+            (0, 255, 0),    # Green
+            (0, 0, 255),    # Blue
+            (75, 0, 130),   # Indigo
+            (148, 0, 211)   # Violet
+        ]
+
+        while self.effect_running:
+            for i in range(len(colors)):
+                for j in range((self.led_count // 2) + 1): 
+                    if not self.effect_running:
+                        break   
+                    
+                    self.led_states[j] = colors[i]
+                    if not j == 0:
+                        self.led_states[self.led_count - j] = colors[i]
+
+                    time.sleep(delay)
+                
+
+    def snake_effect(self):
+        """Creates a gradient snake effect"""
+        hue_increment = 0.00667
+        hue = 0.0
+        delay = 0.05
+        
+        while self.effect_running:
+            for i in range(self.led_count):
+                if not self.effect_running:
+                    break
+                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                color = (int(r*255), int(g*255), int(b*255))
+                
+                self.led_states[i] = color
+
+                hue += hue_increment   
+                hue %= 1.0            
+
+                time.sleep(delay)
+
+    def festive_effect(self):
+        """Creates alterating festive lights"""
+        delay = 0.4
+        ring_state_even = []
+        ring_state_odd = []
+        colors = [
+            (0, 255, 0),    # Green,
+            (255, 0, 0),    # Red
+        ]
+        
+        for i in range(self.led_count):
+            if (i // 2) % 2 == 0: ring_state_even.append(colors[0])
+            else: ring_state_even.append(colors[1])
+
+        ring_state_odd = ring_state_even[2:] + ring_state_even[:2]
+
+        while self.effect_running:
+            with self.state_lock:
+                for i in range(self.led_count):
+                    self.led_states[i] = ring_state_even[i]
+
+            time.sleep(delay)
+
+            if not self.effect_running:
+                break
+
+            with self.state_lock:
+                for i in range(self.led_count):
+                    self.led_states[i] = ring_state_odd[i]
+
+            time.sleep(delay)
+    
     def destroy_node(self):
         """Clean shutdown"""
         self.stop_current_effect()
