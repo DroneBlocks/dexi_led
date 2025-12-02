@@ -116,6 +116,174 @@ class LEDService(Node):
             self.pixels.show()
             time.sleep(delay)
 
+    def rainbow_effect(self):
+        """Creates a rainbow effect with rotating colors"""
+        colors = [
+            red,      # Red
+            orange,   # Orange
+            yellow,   # Yellow
+            green,    # Green
+            blue,     # Blue
+            (75, 0, 130),   # Indigo
+            purple    # Violet
+        ]
+
+        num_colors = len(colors)
+        while self.effect_running:
+            for offset in range(self.num_pixels):
+                if not self.effect_running:
+                    break
+                for i in range(self.num_pixels):
+                    self.pixels[i] = colors[(i + offset) % num_colors]
+                self.pixels.show()
+                time.sleep(0.05)
+
+    def meteor_effect(self):
+        """Creates a meteor shower effect with random colors and positions"""
+        import random
+        meteor_length = 10
+        delay = 0.1
+
+        while self.effect_running:
+            meteor_start = random.randint(0, self.num_pixels - 1)
+            color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+            # Meteor falling animation
+            for i in range(meteor_start, meteor_start + meteor_length):
+                if not self.effect_running:
+                    break
+
+                self.pixels.fill(black)
+                for j in range(meteor_length):
+                    if i - j >= 0 and i - j < self.num_pixels:
+                        # Calculate fading intensity based on position
+                        fade = 1 - (j / meteor_length)
+                        r = int(color[0] * fade)
+                        g = int(color[1] * fade)
+                        b = int(color[2] * fade)
+                        self.pixels[i - j] = (r, g, b)
+
+                self.pixels.show()
+                time.sleep(delay)
+
+    def comet_effect(self):
+        """Creates a comet effect with a trailing fade"""
+        delay = 0.1
+        color = blue  # Blue color
+        trail_length = 10  # Length of the comet trail
+
+        while self.effect_running:
+            for i in range(self.num_pixels + trail_length):
+                if not self.effect_running:
+                    break
+
+                self.pixels.fill(black)  # Clear the strip
+                for j in range(trail_length):
+                    if 0 <= i - j < self.num_pixels:
+                        # Calculate fading intensity
+                        intensity = 1 - (j / trail_length)
+                        r = int(color[0] * intensity)
+                        g = int(color[1] * intensity)
+                        b = int(color[2] * intensity)
+                        self.pixels[i - j] = (r, g, b)
+
+                self.pixels.show()
+                time.sleep(delay)
+
+    def galaxy_spiral_effect(self):
+        """Creates a spiral galaxy effect with multiple rotating color arms"""
+        import random
+        delay = 0.05
+        # Define multiple color arms for the spiral
+        arms = [
+            magenta,    # Purple
+            (0, 100, 255),    # Light Blue
+            white,  # White
+            (255, 50, 0)      # Orange-Red
+        ]
+        num_arms = len(arms)
+        spacing = self.num_pixels // num_arms
+        fade_length = spacing // 2
+
+        while self.effect_running:
+            for offset in range(self.num_pixels):
+                if not self.effect_running:
+                    break
+
+                self.pixels.fill(black)
+
+                # Create multiple rotating arms
+                for arm_idx, color in enumerate(arms):
+                    # Calculate the starting point for each arm
+                    arm_offset = (offset + (arm_idx * spacing)) % self.num_pixels
+
+                    # Create the spiral arm with fading
+                    for i in range(fade_length):
+                        # Calculate two positions: forward and backward from the arm center
+                        pos_forward = (arm_offset + i) % self.num_pixels
+                        pos_backward = (arm_offset - i) % self.num_pixels
+
+                        # Calculate fade intensity based on distance from arm center
+                        intensity = 1 - (i / fade_length)
+                        # Add some shimmer with random variation
+                        intensity *= (0.85 + random.random() * 0.15)
+
+                        r = int(color[0] * intensity)
+                        g = int(color[1] * intensity)
+                        b = int(color[2] * intensity)
+
+                        # Set LEDs on both sides of the arm center
+                        self.pixels[pos_forward] = (r, g, b)
+                        self.pixels[pos_backward] = (r, g, b)
+
+                self.pixels.show()
+                time.sleep(delay)
+
+    def ripple_effect(self):
+        """Creates a ripple effect with color waves moving outward from center"""
+        delay = 0.1
+        color = blue  # Blue color
+        center = self.num_pixels // 2  # Center of the strip
+        ripple_length = 10  # Length of the ripple wave
+
+        while self.effect_running:
+            for radius in range(self.num_pixels // 2 + ripple_length):
+                if not self.effect_running:
+                    break
+
+                self.pixels.fill(black)
+                # Create fading ripple on both sides of center
+                for j in range(ripple_length):
+                    # Calculate fading intensity
+                    intensity = 1 - (j / ripple_length)
+                    r = int(color[0] * intensity)
+                    g = int(color[1] * intensity)
+                    b = int(color[2] * intensity)
+
+                    # Set LEDs symmetrically from center with fade
+                    if center - (radius - j) >= 0:
+                        self.pixels[center - (radius - j)] = (r, g, b)
+                    if center + (radius - j) < self.num_pixels:
+                        self.pixels[center + (radius - j)] = (r, g, b)
+
+                self.pixels.show()
+                time.sleep(delay)
+
+    def loading_effect(self):
+        """Creates a loading bar effect with a single moving LED"""
+        delay = 0.1
+        color = green  # Green color
+
+        while self.effect_running:
+            for i in range(self.num_pixels):
+                if not self.effect_running:
+                    break
+
+                self.pixels.fill(black)  # Clear the strip
+                self.pixels[i] = color  # Set current LED to green
+                self.pixels.show()
+                time.sleep(delay)
+
     def stop_current_effect(self):
         self.effect_running = False
         if self.effect_thread is not None:
@@ -130,7 +298,49 @@ class LEDService(Node):
             # Stop any currently running effect
             self.stop_current_effect()
 
-            if request.effect_name.lower().startswith('blink_'):
+            if request.effect_name.lower() == 'rainbow':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.rainbow_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started rainbow effect")
+                response.success = True
+                response.message = "Successfully started rainbow effect"
+            elif request.effect_name.lower() == 'meteor':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.meteor_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started meteor effect")
+                response.success = True
+                response.message = "Successfully started meteor effect"
+            elif request.effect_name.lower() == 'comet':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.comet_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started comet effect")
+                response.success = True
+                response.message = "Successfully started comet effect"
+            elif request.effect_name.lower() == 'galaxy':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.galaxy_spiral_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started galaxy spiral effect")
+                response.success = True
+                response.message = "Successfully started galaxy spiral effect"
+            elif request.effect_name.lower() == 'ripple':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.ripple_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started ripple effect")
+                response.success = True
+                response.message = "Successfully started ripple effect"
+            elif request.effect_name.lower() == 'loading':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.loading_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started loading effect")
+                response.success = True
+                response.message = "Successfully started loading effect"
+            elif request.effect_name.lower().startswith('blink_'):
                 # Extract color from effect name (e.g., "blink_cyan" -> "cyan")
                 color_name = request.effect_name.lower().replace('blink_', '')
                 self.effect_running = True
