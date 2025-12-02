@@ -9,6 +9,7 @@ import threading
 import time
 import random
 import sys
+import colorsys
 
 class LEDService(Node):
     def __init__(self):
