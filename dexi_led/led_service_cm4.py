@@ -289,7 +289,7 @@ class LEDService(Node):
         """Creates a gradient effect"""
         hue_increment = 0.01
         hue = 0.0
-        delay = 0.05
+        delay = 0.025
 
         while self.effect_running: 
             r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
@@ -305,7 +305,7 @@ class LEDService(Node):
 
     def wave_effect(self):
         """Creates a wave the propagates from the center"""
-        delay = 0.1
+        delay = 0.05
         colors = [
             red,      # Red
             orange,   # Orange
@@ -334,7 +334,7 @@ class LEDService(Node):
         """Creates a gradient snake effect"""
         hue_increment = 0.00667
         hue = 0.0
-        delay = 0.05
+        delay = 0.035
         
         while self.effect_running:
             for i in range(self.num_pixels):
