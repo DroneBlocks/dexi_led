@@ -246,6 +246,26 @@ class LEDService(Node):
                 self.strip.update_strip()
                 time.sleep(delay)
 
+    def aurora_effect(self):
+        """Smooth full-spectrum rainbow that flows around the ring.
+
+        Unlike `rainbow_effect` (which rotates seven discrete color blocks),
+        every pixel takes a hue based on its position, so the whole ring shows
+        one continuous rainbow gradient that rotates a step per frame.
+        """
+        delay = 0.04
+        offset = 0
+        while self.effect_running:
+            for i in range(self.led_count):
+                if not self.effect_running:
+                    break
+                hue = ((i + offset) % self.led_count) / self.led_count
+                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                self.strip.set_led_color(i, int(r * 255), int(g * 255), int(b * 255))
+            self.strip.update_strip()
+            offset = (offset + 1) % self.led_count
+            time.sleep(delay)
+
     def red_flash_effect(self):
         """Creates a red flashing effect with 1-second delays"""
         self.blink_effect("red", 1.0)
@@ -477,6 +497,13 @@ class LEDService(Node):
                 self.get_logger().info("Started galaxy spiral effect")
                 response.success = True
                 response.message = "Successfully started galaxy spiral effect"
+            elif request.effect_name.lower() == 'aurora':
+                self.effect_running = True
+                self.effect_thread = threading.Thread(target=self.aurora_effect)
+                self.effect_thread.start()
+                self.get_logger().info("Started aurora effect")
+                response.success = True
+                response.message = "Successfully started aurora effect"
             elif request.effect_name.lower() == 'red_flash':
                 self.effect_running = True
                 self.effect_thread = threading.Thread(target=self.red_flash_effect)
