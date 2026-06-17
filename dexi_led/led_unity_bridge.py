@@ -169,6 +169,7 @@ class LEDUnityBridge(Node):
 
         effect_methods = {
             'rainbow': self.rainbow_effect,
+            'aurora': self.aurora_effect,
             'meteor': self.meteor_effect,
             'loading': self.loading_effect,
             'ripple': self.ripple_effect,
@@ -217,6 +218,23 @@ class LEDUnityBridge(Node):
                     for i in range(self.led_count):
                         self.led_states[i] = colors[(i + offset) % num_colors]
                 time.sleep(0.05)
+
+    def aurora_effect(self):
+        """Smooth full-spectrum rainbow that flows around the ring.
+
+        Unlike `rainbow_effect` (which rotates seven discrete color blocks),
+        every pixel takes a hue based on its position, so the whole ring shows
+        one continuous rainbow gradient that rotates a step per frame.
+        """
+        offset = 0
+        while self.effect_running:
+            with self.state_lock:
+                for i in range(self.led_count):
+                    hue = ((i + offset) % self.led_count) / self.led_count
+                    r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                    self.led_states[i] = (int(r * 255), int(g * 255), int(b * 255))
+            offset = (offset + 1) % self.led_count
+            time.sleep(0.04)
 
     def galaxy_spiral_effect(self):
         """Galaxy spiral effect matching your implementation"""
