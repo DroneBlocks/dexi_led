@@ -5,11 +5,56 @@ from rclpy.node import Node
 from dexi_interfaces.srv import LEDPixelColor, LEDRingColor, LEDEffect
 from std_msgs.msg import String
 from pi5neo import Pi5Neo
+from rcl_interfaces.msg import SetParametersResult
 import threading
 import time
 import random
 import sys
 import colorsys
+
+def _clamp_brightness(value):
+    """Coerce a brightness parameter into the 0.0-1.0 range."""
+    return min(max(float(value), 0.0), 1.0)
+
+
+class BrightnessStrip:
+    """Wraps Pi5Neo so every write is scaled by a single global brightness.
+
+    pi5neo has no brightness concept of its own, unlike the Adafruit NeoPixel
+    driver the CM4 service uses, so effects writing raw 0-255 values drive the
+    strip at full current. Routing every write through one place keeps the
+    scaling off the individual call sites, where it was previously missing.
+    """
+
+    def __init__(self, strip, brightness):
+        self._strip = strip
+        self._brightness = _clamp_brightness(brightness)
+
+    @property
+    def brightness(self):
+        return self._brightness
+
+    @brightness.setter
+    def brightness(self, value):
+        self._brightness = _clamp_brightness(value)
+
+    def _scale(self, value):
+        return int(value * self._brightness)
+
+    def set_led_color(self, index, red, green, blue, white=0):
+        return self._strip.set_led_color(
+            index, self._scale(red), self._scale(green), self._scale(blue), self._scale(white)
+        )
+
+    def fill_strip(self, red=0, green=0, blue=0, white=0):
+        return self._strip.fill_strip(
+            self._scale(red), self._scale(green), self._scale(blue), self._scale(white)
+        )
+
+    def __getattr__(self, name):
+        # update_strip, clear_strip and friends need no scaling
+        return getattr(self._strip, name)
+
 
 class LEDService(Node):
     def __init__(self):
@@ -22,7 +67,7 @@ class LEDService(Node):
         self.declare_parameter('simulation_mode', False)
         
         self.led_count = self.get_parameter('led_count').value
-        self.brightness = self.get_parameter('brightness').value
+        self.brightness = _clamp_brightness(self.get_parameter('brightness').value)
         self.spi_speed = self.get_parameter('spi_speed').value
         self.simulation_mode = self.get_parameter('simulation_mode').value
 
@@ -32,7 +77,9 @@ class LEDService(Node):
         self._is_shutting_down = False
         
         if not self.simulation_mode:
-            self.strip = Pi5Neo('/dev/spidev1.0', self.led_count, self.spi_speed)
+            self.strip = BrightnessStrip(
+                Pi5Neo('/dev/spidev1.0', self.led_count, self.spi_speed), self.brightness
+            )
             self.strip.fill_strip(0, 0, 0)
             self.strip.update_strip()
         else:
@@ -59,8 +106,34 @@ class LEDService(Node):
         )
 
 
+        # Allow brightness to be retuned without restarting the node
+        self.add_on_set_parameters_callback(self.parameters_callback)
+
         # Register shutdown callback
-        self.get_logger().info('LED Service initialized successfully')
+        self.get_logger().info(
+            f'LED Service initialized successfully (led_count={self.led_count}, '
+            f'brightness={self.brightness})'
+        )
+
+    def parameters_callback(self, params):
+        """Apply brightness changes made at runtime via ros2 param set"""
+        for param in params:
+            if param.name != 'brightness':
+                continue
+            if not 0.0 <= param.value <= 1.0:
+                return SetParametersResult(
+                    successful=False, reason='brightness must be between 0.0 and 1.0'
+                )
+
+        for param in params:
+            if param.name != 'brightness':
+                continue
+            self.brightness = _clamp_brightness(param.value)
+            if not self.simulation_mode and hasattr(self, 'strip'):
+                self.strip.brightness = self.brightness
+            self.get_logger().info(f'Brightness set to {self.brightness}')
+
+        return SetParametersResult(successful=True)
 
     def cleanup(self):
         """Clean up resources"""
@@ -589,16 +662,8 @@ class LEDService(Node):
             # Stop any running effect first
             self.stop_current_effect()
 
-            # Apply fixed brightness scaling with 0.2 multiplier for safety
-            brightness_multiplier = 0.2
-
-            r, g, b = color_map[request.color]
-            # Apply brightness scaling to RGB values
-            r = int(r * brightness_multiplier)
-            g = int(g * brightness_multiplier)
-            b = int(b * brightness_multiplier)
-
-            self.strip.fill_strip(r, g, b)
+            # Brightness is applied by BrightnessStrip, so write full values here
+            self.strip.fill_strip(*color_map[request.color])
             self.strip.update_strip()
 
             response.success = True
