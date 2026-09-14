@@ -4,7 +4,6 @@ import rclpy
 from rclpy.node import Node
 from dexi_interfaces.srv import LEDPixelColor, LEDRingColor, LEDEffect
 from std_msgs.msg import String
-from pi5neo import Pi5Neo
 from rcl_interfaces.msg import SetParametersResult
 import threading
 import time
@@ -15,6 +14,39 @@ import colorsys
 def _clamp_brightness(value):
     """Coerce a brightness parameter into the 0.0-1.0 range."""
     return min(max(float(value), 0.0), 1.0)
+
+
+class PioStrip:
+    """WS2812 over the RP1 PIO, for carriers that wire the strip to a pin SPI
+    cannot reach (the ARK carrier uses GPIO 12). Needs root for /dev/pio0."""
+
+    def __init__(self, pin, led_count):
+        import board
+        import neopixel
+        self._px = neopixel.NeoPixel(
+            getattr(board, 'D%d' % pin), led_count, brightness=1.0, auto_write=False)
+
+    def set_led_color(self, index, red, green, blue, white=0):
+        self._px[index] = (red, green, blue)
+        return True
+
+    def fill_strip(self, red=0, green=0, blue=0, white=0):
+        self._px.fill((red, green, blue))
+
+    def update_strip(self, sleep_duration=None):
+        self._px.show()
+
+    def clear_strip(self):
+        self._px.fill((0, 0, 0))
+
+
+def make_strip(driver, led_count, spi_speed, led_pin):
+    """Build the platform backend. 'spi' is SPI1 MOSI (GPIO 20); 'pio' drives
+    an arbitrary pin through the RP1 PIO."""
+    if driver == 'pio':
+        return PioStrip(led_pin, led_count)
+    from pi5neo import Pi5Neo
+    return Pi5Neo('/dev/spidev1.0', led_count, spi_speed)
 
 
 class BrightnessStrip:
@@ -64,11 +96,15 @@ class LEDService(Node):
         self.declare_parameter('led_count', 78)
         self.declare_parameter('brightness', 0.2)
         self.declare_parameter('spi_speed', 800)
+        self.declare_parameter('led_driver', 'spi')
+        self.declare_parameter('led_pin', 12)
         self.declare_parameter('simulation_mode', False)
         
         self.led_count = self.get_parameter('led_count').value
         self.brightness = _clamp_brightness(self.get_parameter('brightness').value)
         self.spi_speed = self.get_parameter('spi_speed').value
+        self.led_driver = self.get_parameter('led_driver').value
+        self.led_pin = self.get_parameter('led_pin').value
         self.simulation_mode = self.get_parameter('simulation_mode').value
 
         # Add effect control variables
@@ -78,7 +114,8 @@ class LEDService(Node):
         
         if not self.simulation_mode:
             self.strip = BrightnessStrip(
-                Pi5Neo('/dev/spidev1.0', self.led_count, self.spi_speed), self.brightness
+                make_strip(self.led_driver, self.led_count, self.spi_speed, self.led_pin),
+                self.brightness
             )
             self.strip.fill_strip(0, 0, 0)
             self.strip.update_strip()
@@ -112,7 +149,8 @@ class LEDService(Node):
         # Register shutdown callback
         self.get_logger().info(
             f'LED Service initialized successfully (led_count={self.led_count}, '
-            f'brightness={self.brightness})'
+            f'brightness={self.brightness}, driver={self.led_driver}'
+            + (f', pin={self.led_pin}' if self.led_driver == 'pio' else '') + ')'
         )
 
     def parameters_callback(self, params):

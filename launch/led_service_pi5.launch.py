@@ -17,6 +17,18 @@ def generate_launch_description():
         description='LED brightness (0.0-1.0)'
     )
     
+    led_driver_arg = DeclareLaunchArgument(
+        'led_driver',
+        default_value='spi',
+        description="LED backend: 'spi' (SPI1 MOSI, GPIO 20) or 'pio' (RP1 PIO, any pin)"
+    )
+
+    led_pin_arg = DeclareLaunchArgument(
+        'led_pin',
+        default_value='12',
+        description='GPIO pin for the pio driver (ignored by spi)'
+    )
+
     spi_speed_arg = DeclareLaunchArgument(
         'spi_speed',
         default_value='800',
@@ -39,6 +51,8 @@ def generate_launch_description():
             'led_count': LaunchConfiguration('led_count'),
             'brightness': LaunchConfiguration('brightness'),
             'spi_speed': LaunchConfiguration('spi_speed'),
+            'led_driver': LaunchConfiguration('led_driver'),
+            'led_pin': LaunchConfiguration('led_pin'),
             'simulation_mode': LaunchConfiguration('simulation_mode')
         }],
         output='screen'
@@ -56,6 +70,8 @@ def generate_launch_description():
     return LaunchDescription([
         led_count_arg,
         brightness_arg,
+        led_driver_arg,
+        led_pin_arg,
         spi_speed_arg,
         simulation_mode_arg,
         led_service_node,
