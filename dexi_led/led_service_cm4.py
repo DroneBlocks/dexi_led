@@ -37,7 +37,11 @@ class LEDService(Node):
         self.led_color_service = self.create_service(LEDRingColor, '~/set_led_ring_color', self.set_led_ring_callback)
         self.effect_service = self.create_service(LEDEffect, '~/set_led_effect', self.effect_callback)
         
-        self.pixel_pin = board.D12
+        # rpi_ws281x on a CM4 can only drive GPIO 10, 12, 18 or 21. The ARK carrier wires the
+        # LED Strip port to 12; 21 is on its GPIO port.
+        self.declare_parameter('led_pin', 12)
+        self.led_pin = self.get_parameter('led_pin').value
+        self.pixel_pin = getattr(board, 'D%d' % self.led_pin)
         self.num_pixels = 45
         self.pixel_order = neopixel.GRB
         self.pixels = neopixel.NeoPixel(self.pixel_pin, self.num_pixels, brightness=0.2, auto_write=False, pixel_order=self.pixel_order)

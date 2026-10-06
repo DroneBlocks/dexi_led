@@ -53,7 +53,7 @@ The LED service provides the following ROS2 services:
 - **Library**: Adafruit NeoPixel and LED Animation
 - **Features**:
   - Predefined color constants from Adafruit library
-  - GPIO-based control (board.D12)
+  - GPIO-based control, `led_pin` parameter (default 12). rpi_ws281x can only drive GPIO 10, 12, 18 or 21; on the ARK carrier 12 is the LED Strip port and 21 is the GPIO port
   - Solid color animations via `Solid()` class
   - Blink effects support
 - **LED Control**: `pixels.fill()` and `pixels.show()`
